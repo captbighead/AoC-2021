@@ -1,16 +1,12 @@
 import utilities.io     as io 
 import importlib
+import cProfile
 import time
 import os
 
 # Dynamically imports the solution files for the project, provided they exist.
 _SOLUTIONS = {}
 def import_solutions():
-    
-    print("--")
-    print(os.getcwd())
-    print("--")
-    
     global _SOLUTIONS
     for i in range(1, 26):
         if os.path.exists(f"solutions\\day{i}.py"):
@@ -18,7 +14,7 @@ def import_solutions():
                 _SOLUTIONS[i] = importlib.import_module(f"solutions.day{i}")
             except:
                 print(f"Failed to load the solution for problem {i} due to a sy"
-                      f"ntax error.")
+                      f"ntax error (or something).")
 import_solutions()
 
 def main():
@@ -27,7 +23,7 @@ def main():
         try:
             soln = int(input("Choose a day to solve: "))
             print()
-            if soln not in (0, -1, -2, -4) and soln not in _SOLUTIONS.keys():
+            if soln not in (0,-1,-2,-3,-4) and soln not in _SOLUTIONS.keys():
                 raise LookupError
             
         except LookupError: # No such solution 
@@ -54,11 +50,18 @@ def main():
             reload_solutions()
             continue
 
-        # -4 is *another* secret option: It generates blank files for the inputs
+        # -3 is a secret option to run a profiler over a given problem and 
+        # assess it's performance. 
+        if soln == -3: 
+            profile_solution()
+            continue
+
+        # -4 generates blank input files to be saved over. 
         if soln == -4:
-            io.create_blank_input_files()
+            generate_blank_input_files()
             continue
             
+        # If it wasn't a hidden option, we actually run the dang thing:
         start_time = time.time()
         _SOLUTIONS[soln].print_header()
         _SOLUTIONS[soln].solve_p1()
@@ -84,6 +87,46 @@ def reload_solutions():
 
         # No provision is made for if the solution doesn't exist anymore. 
     print("Reload complete\n")
+
+def generate_blank_input_files():
+    """Generates new/refreshes stale solution files from the day0 template."""
+    
+    # Iterate over the input files for all problems and generate any that are 
+    # missing.
+    print("Creating blank input files for all of the problems:")
+    for i in range(1,26):
+        if os.path.exists(f"inputs\\day{i}.txt"):
+            continue
+        else:
+            with open(f"inputs\\day{i}.txt", "w") as f:
+                f.write("This is a blank input file (to be saved over)")
+
+        if os.path.exists(f"inputs\\day{i}_ex.txt"):
+            continue
+        else:
+            with open(f"inputs\\day{i}_ex.txt", "w") as f:
+                f.write("This is a blank example input file (to be saved over)")
+
+def profile_solution():
+    print()
+    problem = input("Choose a problem to profile: ")
+    while not problem.isdigit() or int(problem) not in _SOLUTIONS.keys():
+        problem = input(f"{problem} is an invalid problem to solve. Choose a pr"
+                        f"oblem to profile: ")
+    problem = int(problem)
+    
+    part = input(f"Choose which part of problem {problem} to solve: ")
+    while part not in "12":
+        part = input(f"{part} is invalid. Choose a part (1, 2): ")
+    part = int(part)
+
+    print(f"\nProfiling the solution for Problem {problem}, Part {part}:\n")
+
+    profiler = cProfile.Profile()
+    run_str = f"_SOLUTIONS[{problem}].solve_p{part}()"
+    profiler.runctx(run_str, globals(), locals())
+    profiler.print_stats(sort="tottime")
+    print()
 
 
 def generate_solution_files():
