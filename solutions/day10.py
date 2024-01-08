@@ -14,38 +14,115 @@ except:
 	input_lines = ["Input Lines Not Found"]
 	example_lines = ["Example"]
 
+def score_chunkset(chunkstr):
+	bracket_match = {}
+	lefts = "([{<"
+	rights = ")]}>"
+	for lft, rht in zip(lefts, rights):
+		bracket_match[lft] = rht
+		bracket_match[rht] = lft
+	scores = {end: val for end, val in zip(rights, [3, 57, 1197, 25137])}
+	
+	chunkstack = []
+	for c in chunkstr:
+		# It's always okay to open a new chunk
+		if c in lefts:
+			chunkstack.append(c)
+			continue
+
+		# If we find a right-hand bracket that doesn't match the last chunk open
+		# character, it's a corrupted value
+		if c in rights and c != bracket_match[chunkstack[-1]]:
+			return scores[c]
+		
+		# Otherwise, we completed the most recent open chunk.
+		chunkstack.pop()
+
+	# This is guaranteed to happen: we are given that all lines are either 
+	# incomplete or corrupted. Getting here means that we weren't corrupted.
+	if chunkstack:
+		return 0
+	else:
+		raise ValueError("This isn't supposed to happen!")
+
+def autocomplete(chunkstr):
+	bracket_match = {}
+	lefts = "([{<"
+	rights = ")]}>"
+	for lft, rht in zip(lefts, rights):
+		bracket_match[lft] = rht
+		bracket_match[rht] = lft
+	
+	chunkstack = []
+	for c in chunkstr:
+		# It's always okay to open a new chunk
+		if c in lefts:
+			chunkstack.append(c)
+			continue
+
+		# If we find a right-hand bracket that doesn't match the last chunk open
+		# character, it's a corrupted value
+		if c in rights and c != bracket_match[chunkstack[-1]]:
+			return None
+		
+		# Otherwise, we completed the most recent open chunk.
+		chunkstack.pop()
+
+	# Getting here means that we weren't corrupted.
+	autostr = ""
+	while chunkstack:
+		autostr += bracket_match[chunkstack.pop()]
+	return autostr
+
+def score_autocomplete_str(ac_str):
+	rubrik = {c: s for c, s in zip(")]}>", range(1, 5))}
+	score = 0
+	for c in ac_str:
+		score *= 5
+		score += rubrik[c]
+	return score
+
 def do_part_one_for(lines):
-	pass
+	return sum(score_chunkset(ln) for ln in lines)
 
 def do_part_two_for(lines):
-	pass
+	scores = []
+	for chunkstr in lines: 
+		ac = autocomplete(chunkstr)
+		if ac == None:
+			continue
+		scores.append(score_autocomplete_str(ac))
+	scores.sort()
+	return scores[len(scores)//2]
+
+
 
 def solve_p1():
 	print(f"PART ONE\n--------\n")
-	print(f"This is the prompt for Part One of the problem.\n")
+	print(f"Find the aggregate corruption score for the lines in the input.\n")
 
-	print(f"When we do part one for the example input:")
 	results = do_part_one_for(example_lines)
-	print(f"\tThe <THING THEY WANT> is {results}")
-	print(f"\tWe expected: <SOLUTION THEY WANT>\n")
+	print(f"When we do part one for the example input:")
+	print(f"\tThe corruption score is {results}")
+	print(f"\tWe expected: 26397\n")
 
-	print(f"When we do part one for the actual input:")
 	results = do_part_one_for(input_lines)
-	print(f"\tThe <THING THEY WANT> is {results}\n")
+	print(f"When we do part one for the actual input:")
+	print(f"\tThe corruption score is {results}\n")
 
 def solve_p2():
-	return
 	print(f"PART TWO\n--------\n")
-	print(f"This is the prompt for Part Two of the problem.\n")
+	print(f"What is the middle auto-completion score for the auto-completion st"
+       	  f"rings needed to close the unfinished lines?\n")
 
-	print(f"When we do part two for the example input:")
 	results = do_part_two_for(example_lines)
-	print(f"\tThe <THING THEY WANT> is {results}")
-	print(f"\tWe expected: <SOLUTION THEY WANT>\n")
+	print(f"When we do part two for the example input:")
+	print(f"\tThe middle auto-completion score is {results}")
+	print(f"\tWe expected: 288957\n")
 
-	print(f"When we do part two for the actual input:")
 	results = do_part_two_for(input_lines)
-	print(f"\tThe <THING THEY WANT> is {results}\n")
+	print(f"When we do part two for the actual input:")
+	print(f"\tThe middle auto-completion score is {results}\n")
 
 def print_header():
 	print("--- DAY 10: <TITLE GOES HERE> ---\n")
